@@ -1,17 +1,50 @@
 {
   "info": {
     "name": "Hospital Management System - JWT (Assignment 02)",
-    "description": "Requests for the Secure RESTful Hospital Management API.\n\n1. Set the collection variable `studentNo` to your student number (e.g. PS/2022/123).\n2. Run '1. Auth' requests in order. Login requests save their token into a collection variable automatically.\n3. For Task 2, paste the token you modified on jwt.io into the `tamperedToken` collection variable.",
+    "description": "Requests for the Secure RESTful Hospital Management API.\n\n1. Set the collection variable `studentNo` to your student number (e.g. PS/2022/123).\n2. Run '1. Auth' requests in order. Login requests save their token into a collection variable automatically.\n3. For Task 2, paste the token you modified on jwt.io into the `tamperedToken` collection variable.\n4. IDs are MongoDB ObjectIds. 'Doctor > My appointments' saves appointmentId/patientId and 'Patient > Available doctors' saves doctorId automatically.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8080" },
-    { "key": "studentNo", "value": "PS/2022/XXX" },
-    { "key": "patientToken", "value": "" },
-    { "key": "tamperedToken", "value": "PASTE-THE-MODIFIED-TOKEN-FROM-JWT.IO-HERE" },
-    { "key": "adminToken", "value": "" },
-    { "key": "doctorToken", "value": "" },
-    { "key": "appointmentTime", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "studentNo",
+      "value": "PS/2022/XXX"
+    },
+    {
+      "key": "patientToken",
+      "value": ""
+    },
+    {
+      "key": "tamperedToken",
+      "value": "PASTE-THE-MODIFIED-TOKEN-FROM-JWT.IO-HERE"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "doctorToken",
+      "value": ""
+    },
+    {
+      "key": "appointmentTime",
+      "value": ""
+    },
+    {
+      "key": "doctorId",
+      "value": ""
+    },
+    {
+      "key": "patientId",
+      "value": ""
+    },
+    {
+      "key": "appointmentId",
+      "value": ""
+    }
   ],
   "event": [
     {
@@ -35,11 +68,20 @@
           "name": "Register Patient (student number)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"{{studentNo}}\",\n  \"password\": \"{{studentNo}}\",\n  \"fullName\": \"Test User\",\n  \"role\": \"PATIENT\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/register"
           }
@@ -60,11 +102,20 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"{{studentNo}}\",\n  \"password\": \"{{studentNo}}\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/login"
           }
@@ -85,11 +136,20 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/login"
           }
@@ -110,11 +170,20 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"dr.silva\",\n  \"password\": \"doctor123\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/login"
           }
@@ -122,7 +191,16 @@
         {
           "name": "Me (current user)",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{patientToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{patientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "url": "{{baseUrl}}/api/auth/me"
           }
@@ -146,13 +224,31 @@
             }
           ],
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tamperedToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tamperedToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Test\",\n  \"username\": \"{{studentNo}}-N\",\n  \"password\": \"{{studentNo}}\",\n  \"role\": \"NURSE\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/register"
           }
@@ -171,7 +267,16 @@
             }
           ],
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tamperedToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tamperedToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "url": "{{baseUrl}}/api/patients"
           }
@@ -179,7 +284,16 @@
         {
           "name": "Control - View patient records with the genuine patient token (403)",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{patientToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{patientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "url": "{{baseUrl}}/api/patients"
           }
@@ -187,13 +301,31 @@
         {
           "name": "Control - Register Nurse with a real ADMIN token (201)",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Test Nurse\",\n  \"username\": \"{{studentNo}}-NURSE\",\n  \"password\": \"{{studentNo}}\",\n  \"role\": \"NURSE\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/auth/register"
           }
@@ -206,7 +338,16 @@
         {
           "name": "List all patients",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "url": "{{baseUrl}}/api/admin/patients"
           }
@@ -214,13 +355,31 @@
         {
           "name": "Add a doctor",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"dr.gunawardena\",\n  \"password\": \"doctor123\",\n  \"fullName\": \"Dr. Chamari Gunawardena\",\n  \"specialization\": \"Dermatology\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/admin/doctors"
           }
@@ -228,7 +387,16 @@
         {
           "name": "Hospital statistics",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "url": "{{baseUrl}}/api/admin/stats"
           }
@@ -236,7 +404,16 @@
         {
           "name": "List all users",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "url": "{{baseUrl}}/api/users"
           }
@@ -244,13 +421,31 @@
         {
           "name": "Create patient (staff)",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"fullName\": \"Kasun Perera\",\n  \"dateOfBirth\": \"1990-05-12\",\n  \"gender\": \"MALE\",\n  \"phone\": \"0771112223\",\n  \"email\": \"kasun@example.com\",\n  \"address\": \"10 Main Street, Colombo\",\n  \"bloodGroup\": \"AB+\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/patients"
           }
@@ -263,21 +458,63 @@
         {
           "name": "My appointments",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{doctorToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{doctorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "url": "{{baseUrl}}/api/doctors/appointments"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const list = pm.response.json();",
+                  "if (list.length > 0) {",
+                  "  pm.collectionVariables.set('appointmentId', list[0].id);",
+                  "  pm.collectionVariables.set('patientId', list[0].patientId);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Write medical record",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{doctorToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{doctorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"patientId\": 1,\n  \"appointmentId\": 1,\n  \"diagnosis\": \"Stable angina\",\n  \"prescription\": \"Aspirin 75mg daily\",\n  \"notes\": \"Review in 2 weeks\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"diagnosis\": \"Stable angina\",\n  \"prescription\": \"Aspirin 75mg daily\",\n  \"notes\": \"Review in 2 weeks\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/records"
           }
@@ -285,15 +522,33 @@
         {
           "name": "Complete appointment",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{doctorToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{doctorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"status\": \"COMPLETED\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": "{{baseUrl}}/api/appointments/1/status"
+            "url": "{{baseUrl}}/api/appointments/{{appointmentId}}/status"
           }
         }
       ]
@@ -304,21 +559,60 @@
         {
           "name": "Available doctors",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{patientToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{patientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "url": "{{baseUrl}}/api/doctors"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const doctor = pm.response.json().find(d => d.username === 'dr.silva') || pm.response.json()[0];",
+                  "pm.collectionVariables.set('doctorId', doctor.id);"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Book appointment",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{patientToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{patientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"doctorId\": 2,\n  \"appointmentTime\": \"{{appointmentTime}}\",\n  \"reason\": \"General check-up\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"appointmentTime\": \"{{appointmentTime}}\",\n  \"reason\": \"General check-up\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": "{{baseUrl}}/api/patients/appointments"
           }
@@ -326,7 +620,16 @@
         {
           "name": "My appointments",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{patientToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{patientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "url": "{{baseUrl}}/api/patients/appointments"
           }
@@ -334,7 +637,16 @@
         {
           "name": "My medical records",
           "request": {
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{patientToken}}", "type": "string" }] },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{patientToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "url": "{{baseUrl}}/api/patients/records"
           }

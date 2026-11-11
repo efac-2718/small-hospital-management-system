@@ -3,24 +3,24 @@
 COSC 32133 / BECS 32263 – Full-Stack Software Development, Assignment 02.
 
 A RESTful backend built with **Spring Boot 4**, **Spring Security** (6+ API: `SecurityFilterChain`, `@PreAuthorize`),
-**JWT (JJWT 0.11.5)**, **Spring Data JPA** and **MySQL**. Passwords are stored as **BCrypt** hashes, sessions are
+**JWT (JJWT 0.11.5)**, **Spring Data MongoDB** and **MongoDB**. Passwords are stored as **BCrypt** hashes, sessions are
 **stateless**, and access is controlled by role (**ADMIN, DOCTOR, NURSE, RECEPTIONIST, PATIENT**).
 
 ---
 
 ## 1. Running the project
 
-**Requirements:** Java 21, MySQL 8 running on `localhost:3306`, Postman.
+**Requirements:** Java 21, MongoDB running on `localhost:27017` (MongoDB Community Server, or
+`docker run -d -p 27017:27017 mongo:8`), Postman.
 
-The database `hospital_db` is created automatically. The defaults are user `root` / password `root`. If yours are
-different, set environment variables before starting:
+The database `hospital_db` and its collections are created automatically. To use another server (for example
+MongoDB Atlas), set environment variables before starting:
 
-| Variable       | Default                                         |
-|----------------|-------------------------------------------------|
-| `DB_USERNAME`  | `root`                                          |
-| `DB_PASSWORD`  | `root`                                          |
-| `DB_URL`       | `jdbc:mysql://localhost:3306/hospital_db?...`   |
-| `JWT_SECRET`   | dev-only Base64 key (≥ 48 bytes, HS384)         |
+| Variable            | Default                                    |
+|---------------------|--------------------------------------------|
+| `MONGODB_URI`       | `mongodb://localhost:27017/hospital_db`    |
+| `JWT_SECRET`        | dev-only Base64 key (≥ 48 bytes, HS384)    |
+| `JWT_EXPIRATION_MS` | `3600000` (1 hour)                         |
 
 ```bash
 ./mvnw spring-boot:run
@@ -33,8 +33,8 @@ On Windows: `mvnw.cmd spring-boot:run`. The API listens on **http://localhost:80
 | Username         | Password       | Role         |
 |------------------|----------------|--------------|
 | `admin`          | `admin123`     | ADMIN        |
-| `dr.silva`       | `doctor123`    | DOCTOR (Cardiology, id 2) |
-| `dr.perera`      | `doctor123`    | DOCTOR (Paediatrics, id 3) |
+| `dr.silva`       | `doctor123`    | DOCTOR (Cardiology) |
+| `dr.perera`      | `doctor123`    | DOCTOR (Paediatrics) |
 | `nurse.fernando` | `nurse123`     | NURSE        |
 | `reception`      | `reception123` | RECEPTIONIST |
 | `patient`        | `patient123`   | PATIENT      |
@@ -47,14 +47,21 @@ Three sample patients and one sample appointment (with `dr.silva`) are also crea
 ./mvnw test
 ```
 
-The tests use an in-memory H2 database, so they do not need MySQL. They call the API over real HTTP and cover
-login, registration rules, role checks, ownership rules and the Task 2 tampered-token scenario.
+The tests start an in-memory MongoDB-compatible server (`mongo-java-server`), so they do not need MongoDB installed.
+Unit tests cover `JwtService`, the JWT filter, user loading and BCrypt. Integration tests call the API over real HTTP
+and cover login, registration rules, role checks, ownership rules and the Task 2 tampered-token scenario.
+
+### Learning the concepts hands-on
+
+See **[LEARNING.md](LEARNING.md)**: step-by-step labs where you rebuild each security class from a skeleton with
+TODOs, and a test tells you when your code is right.
 
 ### Postman
 
 Import `postman/Hospital-Management-System.postman_collection.json`. Set the collection variable `studentNo` to
 your student number. Login requests save their token into `patientToken`, `adminToken` or `doctorToken`
-automatically. For Task 2, paste your modified token into `tamperedToken`.
+automatically, and requests save the MongoDB ids they need (`doctorId`, `patientId`, `appointmentId`).
+For Task 2, paste your modified token into `tamperedToken`.
 
 ---
 
@@ -62,8 +69,8 @@ automatically. For Task 2, paste your modified token into `tamperedToken`.
 
 ```
 src/main/java/com/example/small_hospital_management_system
-├── model        Role, AppointmentStatus, AppUser, Patient, Appointment, MedicalRecord
-├── repository   UserRepository, PatientRepository, AppointmentRepository, MedicalRecordRepository
+├── model        Role, AppointmentStatus, AppUser, Patient, Appointment, MedicalRecord  (@Document)
+├── repository   UserRepository, PatientRepository, AppointmentRepository, MedicalRecordRepository  (MongoRepository)
 ├── dto          LoginRequest, RegisterRequest, AuthResponse, UserResponse, AppointmentRequest,
 │                StatusRequest, AppointmentResponse, MedicalRecordRequest, MedicalRecordResponse,
 │                ErrorResponse, StatsResponse
@@ -73,14 +80,27 @@ src/main/java/com/example/small_hospital_management_system
 ├── service      AuthService, PatientService, AppointmentService, MedicalRecordService, StatsService
 ├── controller   AuthController, StaffController, PatientController, AppointmentController,
 │                MedicalRecordController
-└── config       DataLoader
+└── config       DataLoader, MongoConfig
 ```
+
+### MongoDB design
+
+| Collection        | Holds | Links |
+|-------------------|-------|-------|
+| `users`           | login accounts (username unique, BCrypt hash, role) | – |
+| `patients`        | patient details | `username` → the PATIENT account (if any) |
+| `appointments`    | patient + doctor + time + status | `patientId`, `doctorId` + copies of their names |
+| `medical_records` | diagnosis, prescription | `patientId`, `doctorId`, optional `appointmentId` |
+
+MongoDB has no joins or foreign keys. Documents store the ids they refer to, plus a copy of the names to show
+(denormalisation). Rules such as "a patient with appointments cannot be deleted" are enforced in the services.
+IDs are MongoDB ObjectIds (24 hex characters, e.g. `6731f0c2a1b2c3d4e5f60718`).
 
 ### How a request is authenticated
 
 1. `JwtAuthenticationFilter` reads `Authorization: Bearer <token>`.
 2. `JwtService.parseAndValidate` checks the **HS384 signature** and the **expiry**.
-3. The user is loaded from MySQL by `CustomUserDetailsService`. Roles always come from the database.
+3. The user is loaded from MongoDB by `CustomUserDetailsService`. Roles always come from the database.
 4. The user is placed in the `SecurityContext` for this request only. No session is created.
 5. URL rules in `SecurityConfig` and `@PreAuthorize` on each controller method decide access.
 
@@ -144,12 +164,13 @@ could register themselves as ADMIN and RBAC would be meaningless. The field `nam
   "username": "PS/2022/XXX", "fullName": "Test User", "role": "PATIENT" }
 
 // POST /api/patients/appointments  (appointmentTime must be in the future)
-{ "doctorId": 2, "appointmentTime": "2026-12-01T10:00:00", "reason": "Check-up" }
+{ "doctorId": "6731f0c2a1b2c3d4e5f60718", "appointmentTime": "2026-12-01T10:00:00", "reason": "Check-up" }
 
 // POST /api/records
-{ "patientId": 1, "appointmentId": 1, "diagnosis": "Stable angina", "prescription": "Aspirin 75mg" }
+{ "patientId": "6731f0c2a1b2c3d4e5f60716", "appointmentId": "6731f0c2a1b2c3d4e5f60719",
+  "diagnosis": "Stable angina", "prescription": "Aspirin 75mg" }
 
-// PATCH /api/appointments/1/status
+// PATCH /api/appointments/{id}/status
 { "status": "COMPLETED" }
 ```
 
