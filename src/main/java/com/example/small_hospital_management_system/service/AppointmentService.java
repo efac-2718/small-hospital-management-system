@@ -13,10 +13,8 @@ import com.example.small_hospital_management_system.repository.PatientRepository
 import com.example.small_hospital_management_system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Booking and listing appointments.
@@ -34,7 +32,6 @@ public class AppointmentService {
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
 
-    @Transactional
     public AppointmentResponse book(AppointmentRequest request, String username) {
         AppUser caller = getUser(username);
         AppUser doctor = userRepository.findById(request.doctorId())
@@ -43,7 +40,7 @@ public class AppointmentService {
 
         Patient patient;
         if (caller.getRole() == Role.PATIENT) {
-            patient = patientRepository.findByAccountUsername(username)
+            patient = patientRepository.findByUsername(username)
                     .orElseThrow(() -> ApiException.notFound("No patient profile is linked to your account"));
             if (request.patientId() != null && !request.patientId().equals(patient.getId())) {
                 throw ApiException.forbidden("Patients can only book appointments for themselves");
@@ -63,8 +60,11 @@ public class AppointmentService {
         }
 
         Appointment saved = appointmentRepository.save(Appointment.builder()
-                .patient(patient)
-                .doctor(doctor)
+                .patientId(patient.getId())
+                .patientName(patient.getFullName())
+                .doctorId(doctor.getId())
+                .doctorName(doctor.getFullName())
+                .doctorSpecialization(doctor.getSpecialization())
                 .appointmentTime(request.appointmentTime())
                 .reason(request.reason())
                 .status(AppointmentStatus.SCHEDULED)
@@ -73,12 +73,11 @@ public class AppointmentService {
     }
 
     /** Doctor: own list only. Patient: own list only. Other staff: everything. */
-    @Transactional(readOnly = true)
     public List<AppointmentResponse> listVisibleTo(String username) {
         AppUser caller = getUser(username);
         List<Appointment> appointments = switch (caller.getRole()) {
-            case DOCTOR -> appointmentRepository.findByDoctorUsernameOrderByAppointmentTimeAsc(username);
-            case PATIENT -> patientRepository.findByAccountUsername(username)
+            case DOCTOR -> appointmentRepository.findByDoctorIdOrderByAppointmentTimeAsc(caller.getId());
+            case PATIENT -> patientRepository.findByUsername(username)
                     .map(p -> appointmentRepository.findByPatientIdOrderByAppointmentTimeAsc(p.getId()))
                     .orElse(List.of());
             case ADMIN, NURSE, RECEPTIONIST -> appointmentRepository.findAllByOrderByAppointmentTimeAsc();
@@ -86,8 +85,7 @@ public class AppointmentService {
         return appointments.stream().map(AppointmentResponse::from).toList();
     }
 
-    @Transactional(readOnly = true)
-    public AppointmentResponse get(Long id, String username) {
+    public AppointmentResponse get(String id, String username) {
         Appointment appointment = find(id);
         AppUser caller = getUser(username);
         if ((caller.getRole() == Role.DOCTOR || caller.getRole() == Role.PATIENT) && !isOwnedBy(appointment, caller)) {
@@ -96,8 +94,7 @@ public class AppointmentService {
         return AppointmentResponse.from(appointment);
     }
 
-    @Transactional
-    public AppointmentResponse updateStatus(Long id, AppointmentStatus newStatus, String username) {
+    public AppointmentResponse updateStatus(String id, AppointmentStatus newStatus, String username) {
         Appointment appointment = find(id);
         AppUser caller = getUser(username);
 
@@ -129,18 +126,20 @@ public class AppointmentService {
         return AppointmentResponse.from(appointmentRepository.save(appointment));
     }
 
-    private boolean isOwnedBy(Appointment appointment, AppUser caller) {
+    /** Ownership rule: a doctor owns appointments booked with them; a patient owns their own bookings. */
+    boolean isOwnedBy(Appointment appointment, AppUser caller) {
         if (caller.getRole() == Role.DOCTOR) {
-            return Objects.equals(appointment.getDoctor().getId(), caller.getId());
+            return caller.getId().equals(appointment.getDoctorId());
         }
         if (caller.getRole() == Role.PATIENT) {
-            AppUser account = appointment.getPatient().getAccount();
-            return account != null && Objects.equals(account.getId(), caller.getId());
+            return patientRepository.findByUsername(caller.getUsername())
+                    .map(p -> p.getId().equals(appointment.getPatientId()))
+                    .orElse(false);
         }
         return false;
     }
 
-    private Appointment find(Long id) {
+    private Appointment find(String id) {
         return appointmentRepository.findById(id)
                 .orElseThrow(() -> ApiException.notFound("Appointment with id " + id + " not found"));
     }

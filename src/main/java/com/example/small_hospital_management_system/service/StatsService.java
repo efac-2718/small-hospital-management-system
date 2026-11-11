@@ -9,7 +9,6 @@ import com.example.small_hospital_management_system.repository.PatientRepository
 import com.example.small_hospital_management_system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /** Overall hospital statistics for the ADMIN. */
 @Service
@@ -21,7 +20,6 @@ public class StatsService {
     private final AppointmentRepository appointmentRepository;
     private final MedicalRecordRepository medicalRecordRepository;
 
-    @Transactional(readOnly = true)
     public StatsResponse stats() {
         return new StatsResponse(
                 patientRepository.count(),

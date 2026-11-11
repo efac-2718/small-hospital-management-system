@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.context.ActiveProfiles;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -33,8 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Task 2 JWT-tampering scenario.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("test")
-class SecurityFlowIntegrationTests {
+class SecurityFlowIntegrationTests extends MongoTestBase {
 
     private static final AtomicInteger COUNTER = new AtomicInteger(100);
     private static final AtomicInteger SLOT = new AtomicInteger(1);
@@ -190,6 +188,9 @@ class SecurityFlowIntegrationTests {
         assertThat(search.status).isEqualTo(200);
         assertThat(search.body.size()).isEqualTo(1);
         assertThat(search.body.get(0).path("fullName").asString()).isEqualTo("Amaya Wickramasinghe");
+
+        // Characters typed in the search box are matched literally, not as a regular expression
+        assertThat(get("/api/patients?name=.*", admin).body.size()).isZero();
     }
 
     @Test
@@ -221,18 +222,18 @@ class SecurityFlowIntegrationTests {
         String nurse = login("nurse.fernando", "nurse123");
         String admin = login("admin", "admin123");
 
-        long doctorId = doctorId(patient, "dr.silva");
-        long patientId = get("/api/patients/me", patient).body.path("id").asLong();
-        long otherPatientId = get("/api/patients/me", otherPatient).body.path("id").asLong();
+        String doctorId = doctorId(patient, "dr.silva");
+        String patientId = get("/api/patients/me", patient).body.path("id").asString();
+        String otherPatientId = get("/api/patients/me", otherPatient).body.path("id").asString();
         String time = nextFreeSlot();
 
         // Patient books for themselves
         Resp booked = post("/api/patients/appointments", patient,
                 Map.of("doctorId", doctorId, "appointmentTime", time, "reason", "Headache"));
         assertThat(booked.status).isEqualTo(201);
-        assertThat(booked.body.path("patientId").asLong()).isEqualTo(patientId);
+        assertThat(booked.body.path("patientId").asString()).isEqualTo(patientId);
         assertThat(booked.body.path("status").asString()).isEqualTo("SCHEDULED");
-        long appointmentId = booked.body.path("id").asLong();
+        String appointmentId = booked.body.path("id").asString();
 
         // Same doctor + same time -> 409; past date -> 400; booking for someone else -> 403
         assertThat(post("/api/patients/appointments", otherPatient,
@@ -295,7 +296,7 @@ class SecurityFlowIntegrationTests {
         assertThat(post("/api/patients", doctor, valid).status).isEqualTo(403);
         Resp created = post("/api/patients", reception, valid);
         assertThat(created.status).isEqualTo(201);
-        long id = created.body.path("id").asLong();
+        String id = created.body.path("id").asString();
 
         assertThat(delete("/api/patients/" + id, reception).status).isEqualTo(403);
         assertThat(delete("/api/patients/" + id, admin).status).isEqualTo(204);
@@ -337,19 +338,19 @@ class SecurityFlowIntegrationTests {
         return res.body.path("token").asString();
     }
 
-    private long doctorId(String token, String username) {
+    private String doctorId(String token, String username) {
         for (JsonNode doctor : get("/api/doctors", token).body) {
             if (doctor.path("username").asString().equals(username)) {
-                return doctor.path("id").asLong();
+                return doctor.path("id").asString();
             }
         }
         throw new AssertionError("Doctor not found: " + username);
     }
 
-    private java.util.List<Long> ids(Resp res) {
+    private java.util.List<String> ids(Resp res) {
         assertThat(res.status).isEqualTo(200);
-        java.util.List<Long> ids = new java.util.ArrayList<>();
-        res.body.forEach(node -> ids.add(node.path("id").asLong()));
+        java.util.List<String> ids = new java.util.ArrayList<>();
+        res.body.forEach(node -> ids.add(node.path("id").asString()));
         return ids;
     }
 

@@ -41,13 +41,13 @@ public class MedicalRecordController {
 
     @GetMapping("/api/records/patient/{patientId}")
     @PreAuthorize(CLINICAL_OR_OWNER)
-    public List<MedicalRecordResponse> forPatient(@PathVariable Long patientId, Authentication authentication) {
+    public List<MedicalRecordResponse> forPatient(@PathVariable String patientId, Authentication authentication) {
         return medicalRecordService.listForPatient(patientId, authentication.getName());
     }
 
     @GetMapping("/api/records/{id}")
     @PreAuthorize(CLINICAL_OR_OWNER)
-    public MedicalRecordResponse get(@PathVariable Long id, Authentication authentication) {
+    public MedicalRecordResponse get(@PathVariable String id, Authentication authentication) {
         return medicalRecordService.get(id, authentication.getName());
     }
 

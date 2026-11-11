@@ -2,12 +2,16 @@ package com.example.small_hospital_management_system.repository;
 
 import com.example.small_hospital_management_system.model.AppUser;
 import com.example.small_hospital_management_system.model.Role;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface UserRepository extends JpaRepository<AppUser, Long> {
+/**
+ * Spring Data writes the MongoDB query for each method from its name ("derived queries"):
+ * findByUsername(x) becomes  db.users.find({ username: x }).
+ */
+public interface UserRepository extends MongoRepository<AppUser, String> {
 
     Optional<AppUser> findByUsername(String username);
 

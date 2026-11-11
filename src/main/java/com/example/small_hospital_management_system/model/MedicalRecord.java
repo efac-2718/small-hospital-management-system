@@ -1,28 +1,19 @@
 package com.example.small_hospital_management_system.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-/**
- * Diagnosis and prescription written by a doctor for a patient.
- */
-@Entity
-@Table(name = "medical_records")
+/** Diagnosis and prescription written by a doctor for a patient ("medical_records" collection). */
+@Document(collection = "medical_records")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,39 +22,26 @@ import java.time.LocalDateTime;
 public class MedicalRecord {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "patient_id", nullable = false)
-    private Patient patient;
+    @Indexed
+    private String patientId;
+    private String patientName;
 
     /** The doctor who wrote the record (taken from the JWT, never from the request body). */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "doctor_id", nullable = false)
-    private AppUser doctor;
+    @Indexed
+    private String doctorId;
+    private String doctorName;
 
     /** Optional: the appointment this record was written for. */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "appointment_id")
-    private Appointment appointment;
+    private String appointmentId;
 
-    @Column(nullable = false, length = 1000)
     private String diagnosis;
 
-    @Column(length = 1000)
     private String prescription;
 
-    @Column(length = 2000)
     private String notes;
 
-    @Column(nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
-
-    @PrePersist
-    void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-    }
 }

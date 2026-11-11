@@ -6,10 +6,10 @@ import com.example.small_hospital_management_system.model.AppointmentStatus;
 import java.time.LocalDateTime;
 
 public record AppointmentResponse(
-        Long id,
-        Long patientId,
+        String id,
+        String patientId,
         String patientName,
-        Long doctorId,
+        String doctorId,
         String doctorName,
         String doctorSpecialization,
         LocalDateTime appointmentTime,
@@ -20,11 +20,11 @@ public record AppointmentResponse(
     public static AppointmentResponse from(Appointment a) {
         return new AppointmentResponse(
                 a.getId(),
-                a.getPatient().getId(),
-                a.getPatient().getFullName(),
-                a.getDoctor().getId(),
-                a.getDoctor().getFullName(),
-                a.getDoctor().getSpecialization(),
+                a.getPatientId(),
+                a.getPatientName(),
+                a.getDoctorId(),
+                a.getDoctorName(),
+                a.getDoctorSpecialization(),
                 a.getAppointmentTime(),
                 a.getReason(),
                 a.getStatus(),

@@ -1,27 +1,22 @@
 package com.example.small_hospital_management_system.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 /**
- * A login account (staff member or patient). The password column only ever holds a BCrypt hash.
+ * A login account (staff member or patient), stored in the "users" collection.
+ * The password field only ever holds a BCrypt hash.
  */
-@Entity
-@Table(name = "app_users")
+@Document(collection = "users")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -29,39 +24,28 @@ import java.time.LocalDateTime;
 @Builder
 public class AppUser {
 
+    /** MongoDB ObjectId, e.g. "6731f0c2a1b2c3d4e5f60718". */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    /** A unique index stops two accounts having the same username. */
+    @Indexed(unique = true)
     private String username;
 
     /** BCrypt hash, never the plain-text password. */
-    @Column(nullable = false, length = 100)
     private String password;
 
-    @Column(nullable = false, length = 100)
     private String fullName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private Role role;
 
     /** Only used for doctors, e.g. "Cardiology". */
-    @Column(length = 100)
     private String specialization;
 
     @Builder.Default
-    @Column(nullable = false)
     private boolean enabled = true;
 
-    @Column(nullable = false, updatable = false)
+    /** Filled in automatically on the first save (see MongoConfig: @EnableMongoAuditing). */
+    @CreatedDate
     private LocalDateTime createdAt;
-
-    @PrePersist
-    void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-    }
 }

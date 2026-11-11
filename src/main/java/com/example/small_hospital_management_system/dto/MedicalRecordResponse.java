@@ -5,12 +5,12 @@ import com.example.small_hospital_management_system.model.MedicalRecord;
 import java.time.LocalDateTime;
 
 public record MedicalRecordResponse(
-        Long id,
-        Long patientId,
+        String id,
+        String patientId,
         String patientName,
-        Long doctorId,
+        String doctorId,
         String doctorName,
-        Long appointmentId,
+        String appointmentId,
         String diagnosis,
         String prescription,
         String notes,
@@ -19,11 +19,11 @@ public record MedicalRecordResponse(
     public static MedicalRecordResponse from(MedicalRecord r) {
         return new MedicalRecordResponse(
                 r.getId(),
-                r.getPatient().getId(),
-                r.getPatient().getFullName(),
-                r.getDoctor().getId(),
-                r.getDoctor().getFullName(),
-                r.getAppointment() == null ? null : r.getAppointment().getId(),
+                r.getPatientId(),
+                r.getPatientName(),
+                r.getDoctorId(),
+                r.getDoctorName(),
+                r.getAppointmentId(),
                 r.getDiagnosis(),
                 r.getPrescription(),
                 r.getNotes(),

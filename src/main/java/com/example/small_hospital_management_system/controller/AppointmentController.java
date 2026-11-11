@@ -70,13 +70,13 @@ public class AppointmentController {
 
     @GetMapping("/api/appointments/{id}")
     @PreAuthorize("isAuthenticated()")
-    public AppointmentResponse get(@PathVariable Long id, Authentication authentication) {
+    public AppointmentResponse get(@PathVariable String id, Authentication authentication) {
         return appointmentService.get(id, authentication.getName());
     }
 
     @RequestMapping(value = "/api/appointments/{id}/status", method = {RequestMethod.PATCH, RequestMethod.PUT})
     @PreAuthorize("hasAnyRole('ADMIN','RECEPTIONIST','DOCTOR','PATIENT')")
-    public AppointmentResponse updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequest request,
+    public AppointmentResponse updateStatus(@PathVariable String id, @Valid @RequestBody StatusRequest request,
                                             Authentication authentication) {
         return appointmentService.updateStatus(id, request.status(), authentication.getName());
     }

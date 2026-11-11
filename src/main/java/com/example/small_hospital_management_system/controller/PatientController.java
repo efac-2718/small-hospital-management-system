@@ -57,7 +57,7 @@ public class PatientController {
 
     @GetMapping("/api/patients/{id}")
     @PreAuthorize(STAFF)
-    public Patient get(@PathVariable Long id) {
+    public Patient get(@PathVariable String id) {
         return patientService.findById(id);
     }
 
@@ -70,14 +70,14 @@ public class PatientController {
 
     @PutMapping("/api/patients/{id}")
     @PreAuthorize(FRONT_DESK)
-    public Patient update(@PathVariable Long id, @Valid @RequestBody Patient patient) {
+    public Patient update(@PathVariable String id, @Valid @RequestBody Patient patient) {
         return patientService.update(id, patient);
     }
 
     @DeleteMapping({"/api/patients/{id}", "/api/admin/patients/{id}"})
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable String id) {
         patientService.delete(id);
     }
 }

@@ -21,7 +21,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -41,7 +40,6 @@ public class AuthService {
     private final JwtService jwtService;
 
     /** Checks the username + BCrypt password and returns a signed JWT. Wrong credentials give 401. */
-    @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
                 UsernamePasswordAuthenticationToken.unauthenticated(request.username(), request.password()));
@@ -55,7 +53,6 @@ public class AuthService {
      * Anyone may self-register as a PATIENT (the default role).
      * Staff accounts (ADMIN, DOCTOR, NURSE, RECEPTIONIST) need a valid token that belongs to an ADMIN.
      */
-    @Transactional
     public UserResponse register(RegisterRequest request) {
         Role role = request.role() == null ? Role.PATIENT : request.role();
         if (role.isStaff()) {
@@ -65,22 +62,18 @@ public class AuthService {
     }
 
     /** ADMIN adds a new doctor profile (POST /api/admin/doctors). The role is always DOCTOR. */
-    @Transactional
     public UserResponse createDoctor(RegisterRequest request) {
         return UserResponse.from(createUser(request, Role.DOCTOR));
     }
 
-    @Transactional(readOnly = true)
     public UserResponse me(String username) {
         return UserResponse.from(getUser(username));
     }
 
-    @Transactional(readOnly = true)
     public List<UserResponse> listUsers() {
         return userRepository.findAll().stream().map(UserResponse::from).toList();
     }
 
-    @Transactional(readOnly = true)
     public List<UserResponse> listDoctors() {
         return userRepository.findByRoleOrderByFullNameAsc(Role.DOCTOR).stream()
                 .filter(AppUser::isEnabled)
@@ -89,8 +82,7 @@ public class AuthService {
     }
 
     /** ADMIN deletes an account. Blocked (409) if it would orphan appointments or medical records. */
-    @Transactional
-    public void deleteUser(Long id, String currentUsername) {
+    public void deleteUser(String id, String currentUsername) {
         AppUser user = userRepository.findById(id)
                 .orElseThrow(() -> ApiException.notFound("User with id " + id + " not found"));
         if (user.getUsername().equals(currentUsername)) {
@@ -102,7 +94,7 @@ public class AuthService {
                     + "' has appointments or medical records and cannot be deleted");
         }
         if (user.getRole() == Role.PATIENT) {
-            patientRepository.findByAccountUsername(user.getUsername()).ifPresent(patient -> {
+            patientRepository.findByUsername(user.getUsername()).ifPresent(patient -> {
                 if (appointmentRepository.existsByPatientId(patient.getId())
                         || medicalRecordRepository.existsByPatientId(patient.getId())) {
                     throw ApiException.conflict("Patient '" + user.getUsername()
@@ -132,7 +124,7 @@ public class AuthService {
         if (role == Role.PATIENT) {
             patientRepository.save(Patient.builder()
                     .fullName(user.getFullName())
-                    .account(user)
+                    .username(user.getUsername())
                     .build());
         }
         return user;

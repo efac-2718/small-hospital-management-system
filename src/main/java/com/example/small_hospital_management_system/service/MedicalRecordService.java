@@ -15,10 +15,8 @@ import com.example.small_hospital_management_system.repository.PatientRepository
 import com.example.small_hospital_management_system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Medical records. The author is always the doctor identified by the JWT, so a doctor cannot write
@@ -33,7 +31,6 @@ public class MedicalRecordService {
     private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
 
-    @Transactional
     public MedicalRecordResponse create(MedicalRecordRequest request, String doctorUsername) {
         AppUser doctor = getUser(doctorUsername);
         if (doctor.getRole() != Role.DOCTOR) {
@@ -42,15 +39,14 @@ public class MedicalRecordService {
         Patient patient = patientRepository.findById(request.patientId())
                 .orElseThrow(() -> ApiException.notFound("Patient with id " + request.patientId() + " not found"));
 
-        Appointment appointment = null;
         if (request.appointmentId() != null) {
-            appointment = appointmentRepository.findById(request.appointmentId())
+            Appointment appointment = appointmentRepository.findById(request.appointmentId())
                     .orElseThrow(() -> ApiException.notFound(
                             "Appointment with id " + request.appointmentId() + " not found"));
-            if (!Objects.equals(appointment.getDoctor().getId(), doctor.getId())) {
+            if (!doctor.getId().equals(appointment.getDoctorId())) {
                 throw ApiException.forbidden("You can only write records for your own appointments");
             }
-            if (!Objects.equals(appointment.getPatient().getId(), patient.getId())) {
+            if (!patient.getId().equals(appointment.getPatientId())) {
                 throw ApiException.badRequest("Appointment " + appointment.getId()
                         + " does not belong to patient " + patient.getId());
             }
@@ -60,9 +56,11 @@ public class MedicalRecordService {
         }
 
         MedicalRecord saved = medicalRecordRepository.save(MedicalRecord.builder()
-                .patient(patient)
-                .doctor(doctor)
-                .appointment(appointment)
+                .patientId(patient.getId())
+                .patientName(patient.getFullName())
+                .doctorId(doctor.getId())
+                .doctorName(doctor.getFullName())
+                .appointmentId(request.appointmentId())
                 .diagnosis(request.diagnosis())
                 .prescription(request.prescription())
                 .notes(request.notes())
@@ -70,11 +68,10 @@ public class MedicalRecordService {
         return MedicalRecordResponse.from(saved);
     }
 
-    @Transactional(readOnly = true)
-    public List<MedicalRecordResponse> listForPatient(Long patientId, String username) {
+    public List<MedicalRecordResponse> listForPatient(String patientId, String username) {
         AppUser caller = getUser(username);
         if (caller.getRole() == Role.PATIENT) {
-            Long ownId = patientRepository.findByAccountUsername(username).map(Patient::getId).orElse(null);
+            String ownId = patientRepository.findByUsername(username).map(Patient::getId).orElse(null);
             if (!patientId.equals(ownId)) {
                 throw ApiException.forbidden("You can only view your own medical records");
             }
@@ -87,23 +84,23 @@ public class MedicalRecordService {
     }
 
     /** Records of the logged-in PATIENT. */
-    @Transactional(readOnly = true)
     public List<MedicalRecordResponse> listMine(String username) {
-        Patient patient = patientRepository.findByAccountUsername(username)
+        Patient patient = patientRepository.findByUsername(username)
                 .orElseThrow(() -> ApiException.notFound("No patient profile is linked to your account"));
         return medicalRecordRepository.findByPatientIdOrderByCreatedAtDesc(patient.getId()).stream()
                 .map(MedicalRecordResponse::from)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public MedicalRecordResponse get(Long id, String username) {
+    public MedicalRecordResponse get(String id, String username) {
         MedicalRecord record = medicalRecordRepository.findById(id)
                 .orElseThrow(() -> ApiException.notFound("Medical record with id " + id + " not found"));
         AppUser caller = getUser(username);
         if (caller.getRole() == Role.PATIENT) {
-            AppUser owner = record.getPatient().getAccount();
-            if (owner == null || !Objects.equals(owner.getId(), caller.getId())) {
+            boolean own = patientRepository.findByUsername(username)
+                    .map(p -> p.getId().equals(record.getPatientId()))
+                    .orElse(false);
+            if (!own) {
                 throw ApiException.forbidden("You can only view your own medical records");
             }
         }

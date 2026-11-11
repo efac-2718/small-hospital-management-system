@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 /** A user as shown to clients. Deliberately has no password field. */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record UserResponse(
-        Long id,
+        String id,
         String username,
         String fullName,
         Role role,

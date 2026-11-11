@@ -1,30 +1,25 @@
 package com.example.small_hospital_management_system.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 /**
- * Links a patient and a doctor at a date and time.
+ * Links a patient and a doctor at a date and time ("appointments" collection).
+ * <p>
+ * MongoDB has no JOINs, so the document stores the ids of the patient and doctor (to look them up
+ * and to check ownership) plus a copy of their names (so a list can be shown without extra queries).
+ * Copying data like this is called <b>denormalisation</b>.
  */
-@Entity
-@Table(name = "appointments")
+@Document(collection = "appointments")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -33,36 +28,25 @@ import java.time.LocalDateTime;
 public class Appointment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "patient_id", nullable = false)
-    private Patient patient;
+    @Indexed
+    private String patientId;
+    private String patientName;
 
-    /** An AppUser whose role is DOCTOR. */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "doctor_id", nullable = false)
-    private AppUser doctor;
+    /** Id of an AppUser whose role is DOCTOR. */
+    @Indexed
+    private String doctorId;
+    private String doctorName;
+    private String doctorSpecialization;
 
-    @Column(nullable = false)
     private LocalDateTime appointmentTime;
 
-    @Column(length = 500)
     private String reason;
 
     @Builder.Default
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
-    @Column(nullable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
-
-    @PrePersist
-    void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-    }
 }

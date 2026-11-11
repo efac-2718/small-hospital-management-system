@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**
- * Creates the seeded accounts and sample patients on the first start (when the users table is empty).
+ * Creates the seeded accounts and sample patients on the first start (when the users collection is empty).
  * Disable with app.seed.enabled=false.
  */
 @Slf4j
@@ -61,7 +61,7 @@ public class DataLoader implements CommandLineRunner {
                 .email("sunil@example.com")
                 .address("12 Temple Road, Kelaniya")
                 .bloodGroup("O+")
-                .account(patientAccount)
+                .username(patientAccount.getUsername())
                 .build());
         patientRepository.save(Patient.builder()
                 .fullName("Amaya Wickramasinghe")
@@ -82,8 +82,11 @@ public class DataLoader implements CommandLineRunner {
                 .build());
 
         appointmentRepository.save(Appointment.builder()
-                .patient(sunil)
-                .doctor(drSilva)
+                .patientId(sunil.getId())
+                .patientName(sunil.getFullName())
+                .doctorId(drSilva.getId())
+                .doctorName(drSilva.getFullName())
+                .doctorSpecialization(drSilva.getSpecialization())
                 .appointmentTime(LocalDateTime.of(LocalDate.now().plusDays(1), LocalTime.of(10, 0)))
                 .reason("Chest pain follow-up")
                 .status(AppointmentStatus.SCHEDULED)

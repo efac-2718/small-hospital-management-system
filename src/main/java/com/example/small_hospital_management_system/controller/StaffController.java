@@ -43,7 +43,7 @@ public class StaffController {
     @DeleteMapping({"/api/users/{id}", "/api/admin/users/{id}"})
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@PathVariable Long id, Authentication authentication) {
+    public void deleteUser(@PathVariable String id, Authentication authentication) {
         authService.deleteUser(id, authentication.getName());
     }
 
